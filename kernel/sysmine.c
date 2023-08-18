@@ -7,10 +7,8 @@
 #include "proc.h"
 
 uint64
-getppid(void)
+sys_getppid(void)
 {
-  int n;
-  argint(0, &n);
-  exit(n);
-  return 0;  // not reached
+ return 1;
 }
+// todas las llamadas a sistema DEBEN retornar 1
