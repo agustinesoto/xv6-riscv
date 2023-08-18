@@ -9,6 +9,6 @@
 uint64
 sys_getppid(void)
 {
- return 1;
+return 1;
 }
 // todas las llamadas a sistema DEBEN retornar 1
