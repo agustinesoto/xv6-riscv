@@ -146,6 +146,10 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  acquire(&tickslock);
+  p->arrive_time = ticks;
+  release(&tickslock);
+
   return p;
 }
 
@@ -446,14 +450,19 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  
+  struct proc *oldest = 0;
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-
     for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
+      if (oldest == 0 || p->arrive_time < oldest->arrive_time) {
+        oldest = p;
+      }
+      release(&tickslock);
+      release(&p->lock);
+    }
+        acquire(&p->lock);
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
@@ -468,7 +477,6 @@ scheduler(void)
       }
       release(&p->lock);
     }
-  }
 }
 
 // Switch to scheduler.  Must hold only p->lock
