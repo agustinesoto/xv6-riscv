@@ -17,32 +17,32 @@ sys_getppid(void)
 }
 
 uint64 sys_getancestor(void) {
-    struct proc *p = myproc();
+    struct proc* p = myproc();
     int n;
     argint(0, &n);
 
     // Verify that 'n' is valid
     if (n < 0) {
-        printf("numero invalido!!\n");
+        //printf("Número inválido!!\n");
         return -1; // Invalid number
     }
 
     // Navigate up the process hierarchy
-    while (n > 0) {
-        printf("recorriendo jerarquia voy en %d\n",n);
+    while (n > 0 && p != 0) {
+        //printf("Recorriendo jerarquía, voy en %d\n", n);
         p = p->parent;
         n--;
     }
 
-    if (n == 0) {
+    if (n == 0 && p != 0) {
+        //printf("Terminé y llegué al n-ésimo ancestro!!\n");
         return p->pid; // Desired process found
-        printf("termine y llegue al n ancestro!!\n");
-
     } else {
-        printf("termine y no hay suficientes ancestros!!\n");
+        //printf("Terminé y no hay suficientes ancestros!!\n");
         return -1; // Not enough ancestors
     }
 }
+
 
 
 uint64 
