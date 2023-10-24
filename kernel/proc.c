@@ -48,7 +48,6 @@ void
 procinit(void)
 {
   struct proc *p;
-  p->priority = 0; // initialize priority
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
@@ -681,4 +680,22 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+// set priority of a process
+int
+set_priority(int pid, int priority)
+{
+  struct proc *p;
+  // check if priority is in process list
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->pid == pid) {
+      p->priority = priority;
+      return 0;
+    }
+    release(&p->lock);
+  }
+  // process not found
+  return -1;
 }
