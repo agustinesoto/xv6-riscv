@@ -440,37 +440,65 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-void
-scheduler(void)
-{
+
+/*
+ * scheduler tarea 2 - Función que implementa el planificador de procesos en el kernel xv6 riscv.
+ * 
+ * Descripción:
+ *   Esta función es responsable de seleccionar y cambiar entre los procesos que están en
+ *   estado RUNNABLE. Utiliza un algoritmo simple de prioridad para elegir el proceso con
+ *   la prioridad más alta.
+ *
+ * Parámetros:
+ *   Ninguno.
+ *
+ * Valor de retorno:
+ *   Ninguno.
+ */
+void scheduler(void) {
   struct proc *p;
   struct cpu *c = mycpu();
-  
+
+  // Inicializar el puntero al proceso actual como nulo.
   c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
+
+  for (;;) {
+    // Permitir interrupciones para evitar bloqueo del sistema.
     intr_on();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      int high_priority = -1;
-      
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
+    int max_priority = -1;
+    struct proc *selected_proc = 0;
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+    // Buscar el proceso con la prioridad más alta.
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && p->priority > max_priority) {
+        selected_proc = p;
+        max_priority = p->priority;
       }
       release(&p->lock);
     }
+
+    // Si se encontró un proceso, cambiar al proceso seleccionado.
+    if (selected_proc != 0) {
+      acquire(&selected_proc->lock);
+      if (selected_proc->state == RUNNABLE) {
+        selected_proc->state = RUNNING;
+        c->proc = selected_proc;
+        
+        // Cambiar el contexto al proceso seleccionado.
+        swtch(&c->context, &selected_proc->context);
+        
+        // Restablecer el puntero al proceso actual como nulo.
+        c->proc = 0;
+      }
+      release(&selected_proc->lock);
+    }
   }
 }
+
+
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
@@ -683,20 +711,37 @@ procdump(void)
   }
 }
 
-// set priority of a process
-int
-set_priority(int pid, int priority)
-{
+/*
+ * set_priority - System call para establecer la prioridad de un proceso.
+ *
+ * Descripción:
+ *   Esta syscall permite cambiar la prioridad de un proceso identificado por su PID.
+ *   La prioridad se ajusta a un nuevo valor proporcionado como argumento.
+ *
+ * Parámetros:
+ *   - pid: Identificador del proceso al que se le cambiará la prioridad.
+ *   - priority: Nuevo valor de prioridad que se asignará al proceso.
+ *
+ * Valor de retorno:
+ *   - 0: Éxito. La prioridad del proceso se actualizó correctamente.
+ *   - -1: Error. El proceso con el PID especificado no se encontró en la lista de procesos.
+ */
+
+int set_priority(int pid, int priority) {
   struct proc *p;
-  // check if priority is in process list
-  for(p = proc; p < &proc[NPROC]; p++) {
+
+  // Buscar el proceso en la lista de procesos.
+  for (p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
-    if(p->pid == pid) {
+    if (p->pid == pid) {
+      // Se encontró el proceso, actualizar la prioridad y liberar el candado.
       p->priority = priority;
+      release(&p->lock);
       return 0;
     }
     release(&p->lock);
   }
-  // process not found
+
+  // El proceso no se encontró en la lista de procesos.
   return -1;
 }
