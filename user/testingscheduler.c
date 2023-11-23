@@ -15,6 +15,7 @@
  * Valor de retorno:
  *   Ninguno.
  */
+
 void child_process(int child_num) {
     // Asignar prioridad basada en el número de orden del hijo.
     set_priority(child_num, getpid());
