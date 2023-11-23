@@ -5,6 +5,10 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+//incluido por un error que salia
+#include <stdint.h>
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -436,4 +440,84 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+
+int mprotect(void* addr, int len) {
+
+
+  struct proc *curproc = myproc();
+
+
+  // Verificar si addr apunta a una región que no es parte del espacio de direcciones
+  if(len <= 0 || (uintptr_t)addr + len * PGSIZE > curproc->sz) {
+    printf("\nwrong len\n");
+    return -1;
+  }
+
+  // Verificar si addr no está alineado con la página
+  if((uintptr_t)addr % PGSIZE != 0) {
+    printf("\nwrong addr %p\n", addr);
+    return -1;
+  }
+
+  // Bucle para cada página
+  pte_t *pte;
+  for (uintptr_t i = (uintptr_t) addr; i < (uintptr_t) addr + len * PGSIZE; i += PGSIZE) {
+    // Obtener la dirección del PTE en la tabla de páginas del proceso actual
+    pte = walk(curproc->pagetable, i, 0);
+
+    if(pte && ((*pte & PTE_U) != 0) && ((*pte & 1) != 0)) {
+      *pte &= ~PTE_W; // Limpiar el bit de escritura
+      printf("\nPTE: 0x%p\n", pte);
+    } else {
+      return -1;
+    }
+  }
+
+  // En RISC-V, se puede usar sfence.vma para invalidar las entradas TLB
+  sfence_vma(); 
+
+  return 0;
+}
+
+
+
+
+int munprotect(void* addr, int len) {
+
+
+  struct proc *curproc = myproc();
+
+
+  // Verificar si addr apunta a una región que no es parte del espacio de direcciones
+  if(len <= 0 || (uintptr_t)addr + len * PGSIZE > curproc->sz) {
+    printf("\nwrong len\n");
+    return -1;
+  }
+
+  // Verificar si addr no está alineado con la página
+  if((uintptr_t)addr % PGSIZE != 0) {
+    printf("\nwrong addr %p\n", addr);
+    return -1;
+  }
+
+  // Bucle para cada página
+  pte_t *pte;
+  for (uintptr_t i = (uintptr_t) addr; i < (uintptr_t) addr + len * PGSIZE; i += PGSIZE) {
+    // Obtener la dirección del PTE en la tabla de páginas del proceso actual
+    pte = walk(curproc->pagetable, i, 0);
+
+    if(pte && ((*pte & PTE_U) != 0) && ((*pte & 1) != 0)) {
+      *pte |= PTE_W; // NOSE
+      printf("\nPTE: 0x%p\n", pte);
+    } else {
+      return -1;
+    }
+  }
+
+  // En RISC-V, se puede usar sfence.vma para invalidar las entradas TLB
+  sfence_vma(); 
+
+  return 0;
 }
