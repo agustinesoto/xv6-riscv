@@ -7,6 +7,7 @@
 #include "syscall.h"
 #include "defs.h"
 
+#include <stdint.h>
 
 uint64
 sys_set_priority(void)
