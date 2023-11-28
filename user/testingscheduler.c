@@ -19,11 +19,13 @@
 void child_process(int child_num) {
     // Asignar prioridad basada en el número de orden del hijo.
     set_priority(child_num, getpid());
-
+    int x;
     // Ciclo para imprimir mensajes periódicos durante 60 segundos.
     for (int j = 1; j <= 60; j++) {
         printf("PID %d: %d\n", getpid(), j);
-        sleep(1);
+        for(int z = 0; z < 80000000; z+=1){
+          x = x + 3.14*89.64; // https://www.chegg.com/homework-help/questions-and-answers/please-help-lengthy-problem-thank-4-xv6-process-priority-previous-lab-learned-change-prior-q38363160
+        }
     }
 }
 
@@ -44,13 +46,12 @@ void child_process(int child_num) {
  */
 int main() {
     // Número de procesos hijos a crear.
-    int num_children = 5;
+    int num_children = 2;
 
     // Ciclo para crear procesos hijos.
     for (int i = 0; i < num_children; i++) {
         // Crear un nuevo proceso hijo.
         int pid = fork();
-
         // Verificar si el fork fue exitoso.
         if (pid < 0) {
             printf("fork failed");
@@ -62,11 +63,7 @@ int main() {
             // Salir después de que el proceso hijo ha terminado.
             exit(0);
         }
-
-        // Esperar a que el proceso hijo termine.
-        wait(0);
     }
-
     // Salir después de que todos los procesos hijos han terminado.
     exit(0);
 }
