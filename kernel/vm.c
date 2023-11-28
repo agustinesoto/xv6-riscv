@@ -509,7 +509,7 @@ int munprotect(void* addr, int len) {
     pte = walk(curproc->pagetable, i, 0);
 
     if(pte && ((*pte & PTE_U) != 0) && ((*pte & 1) != 0)) {
-      *pte |= PTE_W; // NOSE
+      *pte |= PTE_W; // (activa el bit de escritura).
       printf("\nPTE: 0x%p\n", pte);
     } else {
       return -1;
